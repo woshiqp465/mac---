@@ -1,0 +1,27 @@
+# 忽略软件包文件（大文件不上传到GitHub）
+*.dmg
+*.pkg
+*.zip
+*.tar.gz
+
+# 忽略日志文件
+*.log
+
+# 忽略临时文件
+.DS_Store
+.tmp
+temp/
+backup/
+
+# 忽略配置文件中的敏感信息
+config.local.sh
+
+# 忽略IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 忽略系统文件
+Thumbs.db
+ehthumbs.db
