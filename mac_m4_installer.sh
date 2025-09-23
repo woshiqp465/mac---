@@ -256,7 +256,7 @@ install_targz() {
 install_software() {
     print_status "开始下载和安装软件包..."
 
-    # 定义软件包列表（包含所有13个软件包）
+    # 定义软件包列表（包含所有14个软件包）
     local software_list=(
         "ChatGPT_M.dmg"
         "Chrome_M.dmg"
@@ -264,6 +264,7 @@ install_software() {
         "Telegram_M.dmg"
         "WeChat_M.dmg"
         "Wave_M.dmg"
+        "Qoder_M.dmg"
         "ClashVerge_M.dmg"
         "VSCode_ARM64.zip"
         "WPS_M.zip"
@@ -285,7 +286,7 @@ install_software() {
     print_status "开始安装软件..."
 
     # 安装DMG文件
-    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg ClashVerge_M.dmg; do
+    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg Qoder_M.dmg ClashVerge_M.dmg; do
         if install_dmg "$dmg"; then
             ((installed_count++))
         fi
@@ -348,6 +349,7 @@ configure_dock() {
         "/Applications/Telegram.app"
         "/Applications/WeChat.app"
         "/Applications/Wave.app"
+        "/Applications/Qoder.app"
         "/Applications/ClashVerge.app"
         "/Applications/Visual Studio Code.app"
         "/Applications/WPS Office.app"
@@ -387,6 +389,7 @@ show_summary() {
     echo "   💬 Telegram - 即时通讯"
     echo "   💬 微信 WeChat - 社交通讯"
     echo "   🌊 Wave Terminal - 新一代终端"
+    echo "   🧠 Qoder - AI 开发助手"
     echo "   🔗 Clash Verge - 代理工具"
     echo "   📝 Visual Studio Code - 代码编辑器"
     echo "   📊 WPS Office - 办公软件"

@@ -288,6 +288,9 @@ sleep 2
 update_from_github "Wave Terminal" "wavetermdev/waveterm" "Wave-darwin-arm64.*\\.dmg$" "Wave_M.dmg" 60000000
 sleep 2
 
+update_software "Qoder" "https://download.qoder.com/release/latest/Qoder-darwin-arm64.dmg" "Qoder_M.dmg" 60000000
+sleep 2
+
 update_from_github "Clash Verge" "clash-verge-rev/clash-verge-rev" "(arm64|aarch64).*\\.dmg$" "ClashVerge_M.dmg" 20000000
 sleep 2
 
