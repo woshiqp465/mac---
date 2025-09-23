@@ -6,10 +6,14 @@
 set -e
 
 # 配置变量
-SERVER_IP="192.168.9.147"
+DEFAULT_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 SERVER_PORT="8000"
 SOFTWARE_DIR="/home/$(whoami)/software-cache/macos-arm"
 LOG_DIR="/home/$(whoami)/software-cache"
+
+if [ -z "$DEFAULT_IP" ]; then
+    echo "⚠️ 无法自动检测服务器IP，请手动输入。"
+fi
 
 echo "🍎 Mac M4 软件分发服务器设置"
 echo "======================================"
@@ -33,14 +37,19 @@ cp update_cache.sh "/home/$(whoami)/"
 
 # 更新脚本中的IP地址
 echo "🌐 配置服务器IP地址..."
-read -p "请输入服务器IP地址 (默认: $SERVER_IP): " input_ip
-if [ ! -z "$input_ip" ]; then
+read -p "请输入服务器IP地址${DEFAULT_IP:+ (默认: $DEFAULT_IP)}: " input_ip
+if [ -n "$input_ip" ]; then
     SERVER_IP="$input_ip"
+elif [ -n "$DEFAULT_IP" ]; then
+    SERVER_IP="$DEFAULT_IP"
+else
+    echo "❌ 未提供有效 IP，退出。"
+    exit 1
 fi
 
 # 更新脚本中的IP配置
-sed -i "s/192\.168\.9\.147/$SERVER_IP/g" "$SOFTWARE_DIR/quick_install.sh"
-sed -i "s/192\.168\.9\.147/$SERVER_IP/g" "$SOFTWARE_DIR/mac_m4_installer.sh"
+sed -i "s/SERVER_IP=\"[0-9.]*\"/SERVER_IP=\"$SERVER_IP\"/" "$SOFTWARE_DIR/quick_install.sh"
+sed -i "s/SERVER_IP=\"[0-9.]*\"/SERVER_IP=\"$SERVER_IP\"/" "$SOFTWARE_DIR/mac_m4_installer.sh"
 
 # 设置cron任务
 echo "⏰ 配置自动更新任务..."
