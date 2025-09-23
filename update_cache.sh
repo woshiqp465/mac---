@@ -170,13 +170,7 @@ update_nodejs_pkg() {
     local name="$1"
     local filename="$2"
     local min_size="${3:-50000000}"
-    local url
-
-    url=$(get_latest_node_pkg_url "latest") || true
-    if [[ -z "$url" ]]; then
-        log_line "✗ $name 未能解析最新版本"
-        return 1
-    fi
+    local url="https://nodejs.org/dist/latest/node-latest.pkg"
 
     update_software "$name" "$url" "$filename" "$min_size"
 }
