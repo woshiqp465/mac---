@@ -174,6 +174,68 @@ update_nodejs_pkg() {
     return 0
 }
 
+get_latest_trae_pkg_url() {
+    local api="https://api.trae.ai/icube/api/v1/native/version/trae/latest"
+    local headers=(-H "Accept: application/json" -H "User-Agent: $USER_AGENT")
+    local response
+
+    response=$(curl -sL "${headers[@]}" "$api" || true)
+    if [[ -z "$response" ]]; then
+        return 1
+    fi
+
+    local parsed
+    parsed=$(printf '%s' "$response" | python3 - <<'PY'
+import json
+import sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+manifest = (((data or {}).get('data') or {}).get('manifest') or {}).get('darwin') or {}
+downloads = manifest.get('download') or []
+if isinstance(downloads, dict):
+    downloads = downloads.values()
+for item in downloads:
+    if isinstance(item, dict):
+        candidate = item.get('apple') or item.get('url') or next((v for v in item.values() if isinstance(v, str) and v.startswith('http')), None)
+        if candidate:
+            print(candidate)
+            sys.exit(0)
+    elif isinstance(item, str) and item.startswith("http"):
+        print(item)
+        sys.exit(0)
+url = manifest.get('apple')
+if isinstance(url, str) and url.startswith("http"):
+    print(url)
+    sys.exit(0)
+PY
+)
+
+    if [[ -z "$parsed" ]]; then
+        return 1
+    fi
+
+    printf "%s\n" "$parsed"
+}
+
+update_trae_pkg() {
+    local name="$1"
+    local filename="$2"
+    local min_size="${3:-60000000}"
+    local url
+
+    url=$(get_latest_trae_pkg_url) || true
+    if [[ -z "$url" ]]; then
+        log_line "✗ $name 未能解析最新版本"
+        FAILED_UPDATES+=("$name: 解析失败")
+        return 1
+    fi
+
+    update_software "$name" "$url" "$filename" "$min_size"
+    return $?
+}
+
 # Homebrew 最新 pkg
 get_latest_homebrew_pkg_url() {
     local api="https://api.github.com/repos/Homebrew/brew/releases/latest"
@@ -286,6 +348,9 @@ update_software "WeChat" "https://dldir1v6.qq.com/weixin/Universal/Mac/WeChatMac
 sleep 2
 
 update_from_github "Wave Terminal" "wavetermdev/waveterm" "Wave-darwin-arm64.*\\.dmg$" "Wave_M.dmg" 60000000
+sleep 2
+
+update_trae_pkg "Trae" "Trae_M.dmg" 60000000
 sleep 2
 
 update_software "Qoder" "https://download.qoder.com/release/latest/Qoder-darwin-arm64.dmg" "Qoder_M.dmg" 60000000
