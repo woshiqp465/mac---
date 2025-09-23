@@ -29,6 +29,8 @@ fi
 
 log_line "网络连接正常"
 
+FAILED_UPDATES=()
+
 get_remote_size() {
     local url="$1"
     curl -sIL --connect-timeout 30 --max-time 60 -A "$USER_AGENT" "$url" 2>/dev/null |
@@ -80,10 +82,12 @@ update_software() {
                 fi
                 rm -f "$target.tmp"
                 log_line "✗ $name 下载文件太小"
+                FAILED_UPDATES+=("$name: 文件太小")
                 return 1
             else
                 rm -f "$target.tmp"
                 log_line "✗ $name 下载失败"
+                FAILED_UPDATES+=("$name: 下载失败")
                 return 1
             fi
         else
@@ -102,10 +106,12 @@ update_software() {
         fi
         rm -f "$target"
         log_line "✗ $name 下载文件太小，删除"
+        FAILED_UPDATES+=("$name: 文件太小")
         return 1
     fi
     rm -f "$target"
     log_line "✗ $name 下载失败"
+    FAILED_UPDATES+=("$name: 下载失败")
     return 1
 }
 
@@ -245,6 +251,13 @@ update_from_github "Traefik" "traefik/traefik" "traefik_v.*darwin_arm64\\.tar\\.
 sleep 2
 
 log_line "更新检查完成"
+
+if (( ${#FAILED_UPDATES[@]} > 0 )); then
+    log_line "以下软件更新失败:"
+    for item in "${FAILED_UPDATES[@]}"; do
+        log_line "  - $item"
+    done
+fi
 echo "======================================"
 
 log_line "当前软件包状态:"
