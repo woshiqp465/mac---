@@ -199,7 +199,7 @@ update_git_pkg() {
 
 log_line "开始检查软件更新..."
 
-update_software "ChatGPT" "https://chat.openai.com/apps/mac/latest" "ChatGPT_M.dmg" 40000000
+update_software "ChatGPT" "https://persistent.oaistatic.com/sidekick/public/ChatGPT.dmg" "ChatGPT_M.dmg" 40000000
 sleep 2
 
 update_software "Telegram" "https://updates.tdesktop.com/tmac/Telegram.dmg" "Telegram_M.dmg" 80000000
