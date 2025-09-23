@@ -27,6 +27,20 @@ if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
     exit 1
 fi
 
+with_github_mirror() {
+    local url="$1"
+
+    case "$url" in
+        https://github.com/*|https://raw.githubusercontent.com/*|https://api.github.com/*|https://objects.githubusercontent.com/*)
+            local stripped="${url#https://}"
+            echo "https://mirror.ghproxy.com/${stripped}"
+            ;;
+        *)
+            echo "$url"
+            ;;
+    esac
+}
+
 log_line "网络连接正常"
 
 FAILED_UPDATES=()
@@ -37,7 +51,7 @@ get_remote_size() {
         awk 'BEGIN {IGNORECASE=1} /^content-length/ {gsub("\\r", ""); print $2; exit}'
 }
 
-download_to_temp() {
+_download_with_clients() {
     local url="$1"
     local dest="$2"
 
@@ -46,6 +60,23 @@ download_to_temp() {
     fi
 
     wget --quiet --timeout=600 --tries=3 --continue -U "$USER_AGENT" -O "$dest" "$url"
+}
+
+download_to_temp() {
+    local url="$1"
+    local dest="$2"
+
+    local mirrored
+    mirrored=$(with_github_mirror "$url")
+
+    if [[ "$mirrored" != "$url" ]]; then
+        if _download_with_clients "$mirrored" "$dest"; then
+            return 0
+        fi
+        rm -f "$dest"
+    fi
+
+    _download_with_clients "$url" "$dest"
 }
 
 # 基础更新函数，可设置文件大小阈值
@@ -59,7 +90,13 @@ update_software() {
 
     log_line "检查 $name..."
 
-    local remote_size="$(get_remote_size "$url" || true)"
+    local resolved_url
+    resolved_url=$(with_github_mirror "$url")
+
+    local remote_size="$(get_remote_size "$resolved_url" || true)"
+    if [[ -z "$remote_size" || "$remote_size" == "0" ]] && [[ "$resolved_url" != "$url" ]]; then
+        remote_size="$(get_remote_size "$url" || true)"
+    fi
     if [[ -z "$remote_size" ]]; then
         remote_size=0
     fi
@@ -181,11 +218,13 @@ get_latest_trae_pkg_url() {
 
     response=$(curl -sL "${headers[@]}" "$api" || true)
     if [[ -z "$response" ]]; then
+        log_line "✗ Trae 接口无响应"
         return 1
     fi
 
-    local parsed
-    parsed=$(printf '%s' "$response" | python3 - <<'PY'
+    local parsed=""
+    if command -v python3 >/dev/null 2>&1; then
+        parsed=$(printf '%s' "$response" | python3 - <<'PY'
 import json
 import sys
 try:
@@ -211,8 +250,49 @@ if isinstance(url, str) and url.startswith("http"):
     sys.exit(0)
 PY
 )
+    elif command -v node >/dev/null 2>&1; then
+        parsed=$(printf '%s' "$response" | node <<'NODE'
+const fs = require('fs');
+try {
+  const data = JSON.parse(fs.readFileSync(0, 'utf8'));
+  const manifest = (((data || {}).data || {}).manifest || {}).darwin || {};
+  let downloads = manifest.download || [];
+  if (downloads && typeof downloads === 'object' && !Array.isArray(downloads)) {
+    downloads = Object.values(downloads);
+  }
+  const pick = item => {
+    if (!item) return null;
+    if (typeof item === 'string') return item.startsWith('http') ? item : null;
+    if (typeof item === 'object') {
+      return item.apple || item.url || Object.values(item).find(v => typeof v === 'string' && v.startsWith('http')) || null;
+    }
+    return null;
+  };
+  for (const item of downloads) {
+    const candidate = pick(item);
+    if (candidate) {
+      console.log(candidate);
+      process.exit(0);
+    }
+  }
+  const fallback = pick(manifest.apple);
+  if (fallback) {
+    console.log(fallback);
+    process.exit(0);
+  }
+} catch (err) {
+  process.exit(1);
+}
+process.exit(1);
+NODE
+)
+    else
+        log_line "✗ Trae 缺少 python3 或 node 支持"
+        return 1
+    fi
 
     if [[ -z "$parsed" ]]; then
+        log_line "✗ Trae 接口返回异常或解析失败"
         return 1
     fi
 
