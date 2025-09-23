@@ -232,25 +232,25 @@ try:
     data = json.load(sys.stdin)
 except Exception:
     sys.exit(1)
-manifest = (((data or {}).get('data') or {}).get('manifest') or {}).get('darwin') or {}
-downloads = manifest.get('download') or []
+manifest = (((data or {}).get("data") or {}).get("manifest") or {}).get("darwin") or {}
+downloads = manifest.get("download") or []
 if isinstance(downloads, dict):
     downloads = downloads.values()
 for item in downloads:
     if isinstance(item, dict):
-        candidate = item.get('apple') or item.get('url') or next((v for v in item.values() if isinstance(v, str) and v.startswith('http')), None)
+        candidate = item.get("apple") or item.get("url") or next((v for v in item.values() if isinstance(v, str) and v.startswith("http")), None)
         if candidate:
             print(candidate)
             sys.exit(0)
     elif isinstance(item, str) and item.startswith("http"):
         print(item)
         sys.exit(0)
-url = manifest.get('apple')
+url = manifest.get("apple")
 if isinstance(url, str) and url.startswith("http"):
     print(url)
     sys.exit(0)
 PY
-) || parsed=""
+        ) || parsed=""
     fi
 
     if [[ -z "$parsed" ]] && command -v node >/dev/null 2>&1; then
@@ -267,7 +267,7 @@ try {
     if (!item) return null;
     if (typeof item === 'string') return item.startsWith('http') ? item : null;
     if (typeof item === 'object') {
-      return item.apple || item.url || Object.values(item).find(v => typeof v === 'string' && v.startsWith('http')) || null;
+      return item.apple || item.url || Object.values(item).find(v => typeof v === 'string' && v.startswith('http')) || null;
     }
     return null;
   };
@@ -288,11 +288,11 @@ try {
 }
 process.exit(1);
 NODE
-) || parsed=""
+        ) || parsed=""
     fi
 
     if [[ -z "$parsed" ]]; then
-        parsed=$(printf '%s\n' "$response" | sed -n 's/.*"apple":"\(https:\/\/[^"]*\)".*/\1/p' | head -1)
+        parsed=$(printf '%s\n' "$response" | sed -n "s/.*\"apple\":\"\(https:\/\/[^\"]*\)\".*/\1/p" | head -1)
     fi
 
     if [[ -z "$parsed" ]]; then
