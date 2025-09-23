@@ -269,7 +269,7 @@ install_software() {
         "ClashVerge_M.dmg"
         "VSCode_ARM64.zip"
         "WPS_M.zip"
-        "Git_M.pkg"
+        "Git_M.dmg"
         "NodeJS_ARM64.pkg"
         "Homebrew.pkg"
         "Traefik_M.tar.gz"
@@ -287,7 +287,7 @@ install_software() {
     print_status "开始安装软件..."
 
     # 安装DMG文件
-    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg Qoder_M.dmg Trae_M.dmg ClashVerge_M.dmg; do
+    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg Qoder_M.dmg Trae_M.dmg Git_M.dmg ClashVerge_M.dmg; do
         if install_dmg "$dmg"; then
             ((installed_count++))
         fi
