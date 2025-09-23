@@ -175,6 +175,29 @@ update_nodejs_pkg() {
     update_software "$name" "$url" "$filename" "$min_size"
 }
 
+# Homebrew 最新 pkg
+get_latest_homebrew_pkg_url() {
+    local api="https://api.github.com/repos/Homebrew/brew/releases/latest"
+    local headers
+    mapfile -t headers < <(github_headers)
+    curl -sL "${headers[@]}" "$api"         | grep -oE '"browser_download_url"\s*:\s*"[^"]+\.pkg"'         | head -1         | cut -d'"' -f4
+}
+
+update_homebrew_pkg() {
+    local name="$1"
+    local filename="$2"
+    local min_size="${3:-20000000}"
+    local url
+
+    url=$(get_latest_homebrew_pkg_url) || true
+    if [[ -z "$url" ]]; then
+        log_line "✗ $name 未能解析最新版本"
+        return 1
+    fi
+
+    update_software "$name" "$url" "$filename" "$min_size"
+}
+
 # Git 最新 pkg (基于 SourceForge 命名规则)
 get_latest_git_pkg_url() {
     local api="https://api.github.com/repos/git/git/tags?per_page=1"
@@ -236,6 +259,9 @@ update_software "WPS Office" "https://package.mac.wpscdn.cn/mac_wps_pkg/wps_inst
 sleep 2
 
 update_git_pkg "Git" "Git_M.pkg" 20000000
+sleep 2
+
+update_homebrew_pkg "Homebrew" "Homebrew.pkg" 20000000
 sleep 2
 
 update_nodejs_pkg "Node.js" "NodeJS_ARM64.pkg" 50000000

@@ -237,7 +237,7 @@ install_targz() {
 install_software() {
     print_status "开始下载和安装软件包..."
 
-    # 定义软件包列表（包含所有13个软件包）
+    # 定义软件包列表（包含所有14个软件包）
     local software_list=(
         "ChatGPT_M.dmg"
         "Chrome_M.dmg"
@@ -251,6 +251,7 @@ install_software() {
         "WPS_M.zip"
         "Git_M.pkg"
         "NodeJS_ARM64.pkg"
+        "Homebrew.pkg"
         "Traefik_M.tar.gz"
     )
 
@@ -280,7 +281,7 @@ install_software() {
     done
 
     # 安装PKG文件
-    for pkg in Git_M.pkg NodeJS_ARM64.pkg; do
+    for pkg in Git_M.pkg NodeJS_ARM64.pkg Homebrew.pkg; do
         if install_pkg "$pkg"; then
             ((installed_count++))
         fi
@@ -375,6 +376,7 @@ show_summary() {
     echo "   📊 WPS Office - 办公软件"
     echo "   🔧 Git - 版本控制"
     echo "   🟢 Node.js - JavaScript运行环境"
+    echo "   🍺 Homebrew - 包管理器"
     echo "   🔀 Traefik - 反向代理"
     echo ""
     echo "📋 安装日志保存在: $INSTALL_LOG"
