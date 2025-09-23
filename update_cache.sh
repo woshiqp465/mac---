@@ -214,7 +214,7 @@ log_line "开始检查软件更新..."
 update_software "ChatGPT" "https://persistent.oaistatic.com/sidekick/public/ChatGPT.dmg" "ChatGPT_M.dmg" 40000000
 sleep 2
 
-update_software "Telegram" "https://updates.tdesktop.com/tmac/Telegram.dmg" "Telegram_M.dmg" 80000000
+update_software "Telegram" "https://osx.telegram.org/updates/Telegram.dmg" "Telegram_M.dmg" 80000000
 sleep 2
 
 update_software "Google Chrome" "https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg" "Chrome_M.dmg" 150000000
@@ -223,13 +223,13 @@ sleep 2
 update_software "Docker Desktop" "https://desktop.docker.com/mac/main/arm64/Docker.dmg" "Docker_M.dmg" 300000000
 sleep 2
 
-update_software "WeChat" "https://dldir1.qq.com/weixin/mac/WeChatMac.dmg" "WeChat_M.dmg" 150000000
+update_software "WeChat" "https://dldir1v6.qq.com/weixin/Universal/Mac/WeChatMac.dmg" "WeChat_M.dmg" 150000000
 sleep 2
 
 update_software "Warp Terminal" "https://releases.warp.dev/stable/latest/mac/Warp-macOS-arm64.dmg" "Warp_M.dmg" 60000000
 sleep 2
 
-update_software "Wave Terminal" "https://download.wave.gg/Wave-latest-arm64.dmg" "Wave_M.dmg" 60000000
+update_software "Wave Terminal" "https://dl.waveterm.dev/releases-w2/Wave-darwin-arm64-0.11.6.dmg" "Wave_M.dmg" 60000000
 sleep 2
 
 update_from_github "Clash Verge" "clash-verge-rev/clash-verge-rev" "(arm64|aarch64).*\\.dmg$" "ClashVerge_M.dmg" 20000000
@@ -238,7 +238,7 @@ sleep 2
 update_software "Visual Studio Code" "https://code.visualstudio.com/sha/download?build=stable&os=darwin-arm64" "VSCode_ARM64.zip" 60000000
 sleep 2
 
-update_software "WPS Office" "https://wdl1.cache.wpscdn.com/wps/download/mac/latest/WPSOffice_arm64.zip" "WPS_M.zip" 5000000
+update_software "WPS Office" "https://package.mac.wpscdn.cn/mac_wps_pkg/wps_installer/WPS_Office_Installer.zip" "WPS_M.zip" 5000000
 sleep 2
 
 update_git_pkg "Git" "Git_M.pkg" 20000000
