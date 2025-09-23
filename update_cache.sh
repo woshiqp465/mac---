@@ -41,11 +41,11 @@ download_to_temp() {
     local url="$1"
     local dest="$2"
 
-    if curl -fL --connect-timeout 30 --max-time 300 -A "$USER_AGENT" -o "$dest" "$url"; then
+    if curl -fL --connect-timeout 30 --max-time 1200 --retry 3 --retry-delay 5 -C - -A "$USER_AGENT" -o "$dest" "$url"; then
         return 0
     fi
 
-    wget -q --timeout=300 --tries=2 -U "$USER_AGENT" -O "$dest" "$url"
+    wget --quiet --timeout=600 --tries=3 --continue -U "$USER_AGENT" -O "$dest" "$url"
 }
 
 # 基础更新函数，可设置文件大小阈值
@@ -199,15 +199,58 @@ update_homebrew_pkg() {
 
 # Git 最新 pkg (基于 SourceForge 命名规则)
 get_latest_git_pkg_url() {
-    local api="https://api.github.com/repos/git/git/tags?per_page=1"
+    local api="https://api.github.com/repos/git/git/tags?per_page=15"
     local headers
     mapfile -t headers < <(github_headers)
-    local version
-    version=$(curl -sL "${headers[@]}" "$api" | grep -m1 '"name"' | sed -E 's/.*"v?([0-9]+\\.[0-9]+\\.[0-9]+)".*/\1/')
-    if [[ -z "$version" ]]; then
-        return 1
+
+    local -a versions=()
+    if mapfile -t versions < <(
+        curl -sL "${headers[@]}" "$api" |
+            grep -oE '"name"\s*:\s*"v?([0-9]+\\.[0-9]+\\.[0-9]+)"' |
+            sed -E 's/.*"v?([0-9]+\\.[0-9]+\\.[0-9]+)".*/\1/' |
+            awk '!seen[$0]++'
+    ); then
+        :
+    else
+        versions=()
     fi
-    printf '%s\n' "https://downloads.sourceforge.net/project/git-osx-installer/git-${version}-arm64-big-sur.pkg"
+
+    local base_url="https://downloads.sourceforge.net/project/git-osx-installer"
+    local url
+    local -a suffixes=(
+        "arm64-big-sur.dmg"
+        "universal-mavericks.dmg"
+        "intel-universal-mavericks.dmg"
+    )
+
+    for version in "${versions[@]}"; do
+        for suffix in "${suffixes[@]}"; do
+            url="$base_url/git-${version}-${suffix}"
+            if curl -fIL --connect-timeout 20 --max-time 60 -A "$USER_AGENT" "$url" >/dev/null 2>&1; then
+                printf '%s\n' "$url"
+                return 0
+            fi
+        done
+    done
+
+    local listing
+    listing=$(curl -sL -A "$USER_AGENT" "https://sourceforge.net/projects/git-osx-installer/files/?sort=date&source=navbar" || true)
+    if [[ -n "$listing" ]]; then
+        local filename
+        filename=$(printf '%s\n' "$listing" | grep -oE 'git-[0-9]+\\.[0-9]+\\.[0-9]+-[A-Za-z0-9.-]*arm64[A-Za-z0-9.-]*\\.dmg' | head -1)
+        if [[ -n "$filename" ]]; then
+            printf '%s/%s\n' "$base_url" "$filename"
+            return 0
+        fi
+
+        filename=$(printf '%s\n' "$listing" | grep -oE 'git-[0-9]+\\.[0-9]+\\.[0-9]+-[A-Za-z0-9.-]*(universal|intel-universal)[A-Za-z0-9.-]*\\.dmg' | head -1)
+        if [[ -n "$filename" ]]; then
+            printf '%s/%s\n' "$base_url" "$filename"
+            return 0
+        fi
+    fi
+
+    return 1
 }
 
 update_git_pkg() {
@@ -257,7 +300,7 @@ sleep 2
 update_software "WPS Office" "https://package.mac.wpscdn.cn/mac_wps_pkg/wps_installer/WPS_Office_Installer.zip" "WPS_M.zip" 5000000
 sleep 2
 
-update_git_pkg "Git" "Git_M.pkg" 20000000
+update_git_pkg "Git" "Git_M.dmg" 50000000
 sleep 2
 
 update_homebrew_pkg "Homebrew" "Homebrew.pkg" 20000000

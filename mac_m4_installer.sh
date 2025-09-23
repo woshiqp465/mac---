@@ -121,8 +121,24 @@ install_dmg() {
         return 1
     fi
 
+    local installed=false
+
+    # 优先查找 PKG 安装包
+    local pkg_path=$(find "$mount_point" -maxdepth 3 -name "*.pkg" -type f | head -1)
+    if [[ -n "$pkg_path" ]]; then
+        local pkg_basename=$(basename "$pkg_path")
+        print_status "安装安装包: $pkg_basename"
+
+        if sudo installer -pkg "$pkg_path" -target /; then
+            print_success "$pkg_basename 安装成功"
+            installed=true
+        else
+            print_error "$pkg_basename 安装失败"
+        fi
+    fi
+
     # 查找应用程序
-    local app_name=$(find "$mount_point" -name "*.app" -maxdepth 2 | head -1)
+    local app_name=$(find "$mount_point" -maxdepth 2 -name "*.app" | head -1)
 
     if [[ -n "$app_name" ]]; then
         local app_basename=$(basename "$app_name")
@@ -131,8 +147,11 @@ install_dmg() {
         # 复制到Applications目录
         cp -R "$app_name" /Applications/
         print_success "$app_basename 安装成功"
-    else
-        print_warning "$dmg_file 中未找到应用程序"
+        installed=true
+    fi
+
+    if [[ "$installed" = false ]]; then
+        print_warning "$dmg_file 中未找到可安装内容"
     fi
 
     # 卸载DMG
@@ -249,7 +268,7 @@ install_software() {
         "ClashVerge_M.dmg"
         "VSCode_ARM64.zip"
         "WPS_M.zip"
-        "Git_M.pkg"
+        "Git_M.dmg"
         "NodeJS_ARM64.pkg"
         "Homebrew.pkg"
         "Traefik_M.tar.gz"
@@ -267,7 +286,7 @@ install_software() {
     print_status "开始安装软件..."
 
     # 安装DMG文件
-    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Warp_M.dmg Wave_M.dmg ClashVerge_M.dmg; do
+    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Warp_M.dmg Wave_M.dmg ClashVerge_M.dmg Git_M.dmg; do
         if install_dmg "$dmg"; then
             ((installed_count++))
         fi
@@ -281,7 +300,7 @@ install_software() {
     done
 
     # 安装PKG文件
-    for pkg in Git_M.pkg NodeJS_ARM64.pkg Homebrew.pkg; do
+    for pkg in NodeJS_ARM64.pkg Homebrew.pkg; do
         if install_pkg "$pkg"; then
             ((installed_count++))
         fi
