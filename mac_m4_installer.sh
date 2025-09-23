@@ -315,20 +315,102 @@ install_software() {
 }
 
 # 安装CLI工具
+install_claude_cli() {
+    print_status "安装 Claude Code CLI..."
+
+    if \! command -v npm >/dev/null 2>&1; then
+        print_warning "未检测到 npm，跳过 Claude Code CLI 安装"
+        print_status "请在安装 Node.js 后手动执行: npm install -g @anthropic/claude-code"
+        return 1
+    fi
+
+    if npm install -g @anthropic/claude-code >>"$INSTALL_LOG" 2>&1; then
+        print_success "Claude Code CLI 安装成功"
+        return 0
+    fi
+
+    if sudo npm install -g @anthropic/claude-code >>"$INSTALL_LOG" 2>&1; then
+        print_success "Claude Code CLI (sudo) 安装成功"
+        return 0
+    fi
+
+    print_warning "Claude Code CLI 安装失败，请在网络可用时运行: npm install -g @anthropic/claude-code"
+    return 1
+}
+
+create_codex_wrapper() {
+    local wrapper_path="/usr/local/bin/codex"
+
+    if command -v codex >/dev/null 2>&1; then
+        return 0
+    fi
+
+    if \! command -v openai >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if sudo tee "$wrapper_path" >/dev/null <<'EOF_WRAPPER'
+#!/bin/bash
+exec openai "$@"
+EOF_WRAPPER
+    then
+        sudo chmod +x "$wrapper_path"
+        print_success "已创建 codex 命令包装脚本"
+        return 0
+    fi
+
+    print_warning "未能创建 codex 命令包装脚本，请确认具有写入 /usr/local/bin 的权限"
+    return 1
+}
+
+install_codex_cli() {
+    print_status "安装 Codex CLI..."
+
+    local installed=false
+
+    if command -v pipx >/dev/null 2>&1; then
+        if pipx install --force openai >>"$INSTALL_LOG" 2>&1; then
+            print_success "Codex CLI (pipx) 安装成功"
+            installed=true
+        elif pipx upgrade openai >>"$INSTALL_LOG" 2>&1; then
+            print_success "Codex CLI (pipx) 已更新"
+            installed=true
+        fi
+    fi
+
+    if [[ "$installed" = false ]] && command -v pip3 >/dev/null 2>&1; then
+        if sudo -H pip3 install --upgrade openai >>"$INSTALL_LOG" 2>&1; then
+            print_success "Codex CLI (pip3) 安装成功"
+            installed=true
+        fi
+    fi
+
+    if [[ "$installed" = false ]] && command -v brew >/dev/null 2>&1; then
+        if brew install openai >>"$INSTALL_LOG" 2>&1 || brew upgrade openai >>"$INSTALL_LOG" 2>&1; then
+            print_success "Codex CLI (Homebrew) 安装成功"
+            installed=true
+        fi
+    fi
+
+    if [[ "$installed" = true ]]; then
+        if command -v openai >/dev/null 2>&1; then
+            create_codex_wrapper || true
+            print_status "Codex CLI 安装完成，可使用 'openai' 或 'codex' 命令"
+        else
+            print_warning "未检测到 openai 命令，请检查 PATH 设置"
+        fi
+        return 0
+    fi
+
+    print_warning "Codex CLI 安装失败，请在手动配置网络后执行: pip3 install --upgrade openai"
+    return 1
+}
+
 install_cli_tools() {
     print_status "安装CLI工具..."
 
-    # 安装Claude Code CLI
-    if command -v npm >/dev/null 2>&1; then
-        print_status "安装 Claude Code CLI..."
-        if npm install -g @anthropic/claude-code 2>/dev/null; then
-            print_success "Claude Code CLI 安装成功"
-        else
-            print_warning "Claude Code CLI 安装失败，请手动安装"
-        fi
-    else
-        print_warning "未检测到npm，跳过Claude Code CLI安装"
-    fi
+    install_claude_cli || true
+    install_codex_cli || true
 
     # 安装Homebrew（如果未安装）
     if \! command -v brew >/dev/null 2>&1; then

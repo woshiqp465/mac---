@@ -79,7 +79,7 @@ curl -fsSL http://YOUR_SERVER_IP:8000/quick_install.sh | bash
   - 系统要求检查（Apple Silicon Mac）
   - 分类安装不同格式的软件包
   - 自动配置程序坞
-  - 安装CLI工具（Claude Code CLI, Homebrew）
+  - 安装CLI工具（Claude Code CLI、OpenAI Codex CLI、Homebrew）
 
 ### 3. update_cache.sh
 - **功能**：自动更新脚本，定期检查和更新软件包
@@ -98,6 +98,13 @@ SERVER_IP="192.168.9.147"
 SERVER_PORT="8000"
 BASE_URL="http://${SERVER_IP}:${SERVER_PORT}"
 ```
+
+### AI CLI 工具
+Claude Code CLI：脚本在检测到 `npm` 后自动执行 `npm install -g @anthropic/claude-code`，若安装失败，可手动重试同一命令。
+
+OpenAI Codex CLI：脚本按顺序尝试 `pipx install --force openai`、`pip3 install --upgrade openai`、`brew install openai`，并额外生成调用 `openai` CLI 的 `codex` 包装脚本。若自动安装均未成功，可手动执行 `pip3 install --upgrade openai`。
+
+首次使用时，运行 `claude` 按提示配置 API Key；运行 `codex`（或 `openai`）执行 `openai api login` 完成授权。
 
 ### 目录结构
 ```
