@@ -1,7 +1,7 @@
 #!/bin/bash
 # Mac M4 软件包自动更新脚本 - 扩展版
 
-set -euo pipefail
+set -uo pipefail
 
 CACHE_DIR="/home/atai/software-cache"
 SOFTWARE_DIR="$CACHE_DIR/macos-arm"
@@ -11,6 +11,7 @@ USER_AGENT="mac-m4-cache/1.1"
 
 mkdir -p "$SOFTWARE_DIR" "$CACHE_DIR"
 touch "$LOG_FILE"
+INITIAL_LOG_LINES=$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)
 
 echo "======================================"
 echo "[$TIMESTAMP] 开始更新Mac M4软件缓存"
@@ -37,6 +38,11 @@ get_remote_size() {
 download_to_temp() {
     local url="$1"
     local dest="$2"
+
+    if curl -fL --connect-timeout 30 --max-time 300 -A "$USER_AGENT" -o "$dest" "$url"; then
+        return 0
+    fi
+
     wget -q --timeout=300 --tries=2 -U "$USER_AGENT" -O "$dest" "$url"
 }
 
@@ -252,3 +258,14 @@ for file in *.dmg *.pkg *.zip *.tar.gz; do
 done
 
 log_line "Mac M4软件缓存更新完成"
+
+start_line=$((INITIAL_LOG_LINES + 1))
+current_lines=$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)
+if (( start_line <= current_lines )); then
+    echo ""
+    echo "本次更新日志："
+    tail -n +"$start_line" "$LOG_FILE"
+else
+    echo ""
+    echo "本次更新未生成新的日志条目。"
+fi
