@@ -348,9 +348,12 @@ get_latest_git_pkg_url() {
     local headers
     mapfile -t headers < <(github_headers)
 
+    local api_url
+    api_url=$(with_github_mirror "$api")
+
     local -a versions=()
     if mapfile -t versions < <(
-        curl -sL "${headers[@]}" "$api" |
+        curl -sL "${headers[@]}" "$api_url" |
             grep -oE '"name"\s*:\s*"v?([0-9]+\\.[0-9]+\\.[0-9]+)"' |
             sed -E 's/.*"v?([0-9]+\\.[0-9]+\\.[0-9]+)".*/\1/' |
             awk '!seen[$0]++'
@@ -358,6 +361,17 @@ get_latest_git_pkg_url() {
         :
     else
         versions=()
+    fi
+
+    if [[ ${#versions[@]} -eq 0 && "$api_url" != "$api" ]]; then
+        if mapfile -t versions < <(
+            curl -sL "${headers[@]}" "$api" |
+                grep -oE '"name"\s*:\s*"v?([0-9]+\\.[0-9]+\\.[0-9]+)"' |
+                sed -E 's/.*"v?([0-9]+\\.[0-9]+\\.[0-9]+)".*/\1/' |
+                awk '!seen[$0]++'
+        ); then
+            :
+        fi
     fi
 
     local base_url="https://downloads.sourceforge.net/project/git-osx-installer"
@@ -397,6 +411,7 @@ get_latest_git_pkg_url() {
 
     return 1
 }
+
 
 update_git_pkg() {
     local name="$1"
