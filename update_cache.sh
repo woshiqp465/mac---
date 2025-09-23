@@ -223,6 +223,7 @@ get_latest_trae_pkg_url() {
     fi
 
     local parsed=""
+
     if command -v python3 >/dev/null 2>&1; then
         parsed=$(printf '%s' "$response" | python3 - <<'PY'
 import json
@@ -249,8 +250,10 @@ if isinstance(url, str) and url.startswith("http"):
     print(url)
     sys.exit(0)
 PY
-)
-    elif command -v node >/dev/null 2>&1; then
+) || parsed=""
+    fi
+
+    if [[ -z "$parsed" ]] && command -v node >/dev/null 2>&1; then
         parsed=$(printf '%s' "$response" | node <<'NODE'
 const fs = require('fs');
 try {
@@ -285,10 +288,11 @@ try {
 }
 process.exit(1);
 NODE
-)
-    else
-        log_line "✗ Trae 缺少 python3 或 node 支持"
-        return 1
+) || parsed=""
+    fi
+
+    if [[ -z "$parsed" ]]; then
+        parsed=$(printf '%s\n' "$response" | sed -n 's/.*"apple":"\(https:\/\/[^"]*\)".*/\1/p' | head -1)
     fi
 
     if [[ -z "$parsed" ]]; then
@@ -298,7 +302,6 @@ NODE
 
     printf "%s\n" "$parsed"
 }
-
 update_trae_pkg() {
     local name="$1"
     local filename="$2"
