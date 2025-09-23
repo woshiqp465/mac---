@@ -155,24 +155,23 @@ update_from_github() {
 }
 
 # Node.js 最新 pkg
-get_latest_node_pkg_url() {
-    local channel="${1:-latest}"
-    local base="https://nodejs.org/dist/$channel/"
-    local pkg_name
-    pkg_name=$(curl -sL -A "$USER_AGENT" "${base}SHASUMS256.txt" | awk '/darwin-arm64\\.pkg/ {print $2; exit}')
-    if [[ -z "$pkg_name" ]]; then
-        return 1
-    fi
-    printf '%s\n' "${base}${pkg_name}"
-}
-
 update_nodejs_pkg() {
     local name="$1"
     local filename="$2"
     local min_size="${3:-50000000}"
     local url="https://nodejs.org/dist/latest/node-latest.pkg"
 
-    update_software "$name" "$url" "$filename" "$min_size"
+    if ! update_software "$name" "$url" "$filename" "$min_size"; then
+        FAILED_UPDATES+=("$name: 下载失败")
+        return 1
+    fi
+
+    if [[ ! -s "$SOFTWARE_DIR/$filename" ]]; then
+        FAILED_UPDATES+=("$name: 文件缺失或为空")
+        return 1
+    fi
+
+    return 0
 }
 
 # Homebrew 最新 pkg
@@ -277,6 +276,8 @@ if (( ${#FAILED_UPDATES[@]} > 0 )); then
     for item in "${FAILED_UPDATES[@]}"; do
         log_line "  - $item"
     done
+else
+    log_line "本次所有软件均更新成功"
 fi
 echo "======================================"
 
