@@ -256,19 +256,18 @@ install_targz() {
 install_software() {
     print_status "开始下载和安装软件包..."
 
-    # 定义软件包列表（包含所有14个软件包）
+    # 定义软件包列表（包含所有13个软件包）
     local software_list=(
         "ChatGPT_M.dmg"
         "Chrome_M.dmg"
         "Docker_M.dmg"
         "Telegram_M.dmg"
         "WeChat_M.dmg"
-        "Warp_M.dmg"
         "Wave_M.dmg"
         "ClashVerge_M.dmg"
         "VSCode_ARM64.zip"
         "WPS_M.zip"
-        "Git_M.dmg"
+        "Git_M.pkg"
         "NodeJS_ARM64.pkg"
         "Homebrew.pkg"
         "Traefik_M.tar.gz"
@@ -286,7 +285,7 @@ install_software() {
     print_status "开始安装软件..."
 
     # 安装DMG文件
-    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Warp_M.dmg Wave_M.dmg ClashVerge_M.dmg Git_M.dmg; do
+    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg ClashVerge_M.dmg; do
         if install_dmg "$dmg"; then
             ((installed_count++))
         fi
@@ -348,7 +347,6 @@ configure_dock() {
         "/Applications/Docker.app"
         "/Applications/Telegram.app"
         "/Applications/WeChat.app"
-        "/Applications/Warp.app"
         "/Applications/Wave.app"
         "/Applications/ClashVerge.app"
         "/Applications/Visual Studio Code.app"
@@ -388,7 +386,6 @@ show_summary() {
     echo "   🐳 Docker Desktop - 容器平台"
     echo "   💬 Telegram - 即时通讯"
     echo "   💬 微信 WeChat - 社交通讯"
-    echo "   ⚡ Warp Terminal - 现代终端"
     echo "   🌊 Wave Terminal - 新一代终端"
     echo "   🔗 Clash Verge - 代理工具"
     echo "   📝 Visual Studio Code - 代码编辑器"

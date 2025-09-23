@@ -21,13 +21,13 @@
 | Docker Desktop | 容器平台 | DMG | 511MB |
 | Telegram | 即时通讯 | DMG | 110MB |
 | 微信 WeChat | 社交通讯 | DMG | 354MB |
-| Warp Terminal | 现代终端 | DMG | 152MB |
 | Wave Terminal | 新一代终端 | DMG | 182MB |
 | Clash Verge | 代理工具 | DMG | 43MB |
 | Visual Studio Code | 代码编辑器 | ZIP | 147MB |
 | WPS Office | 办公软件 | ZIP | 6.5MB |
 | Git | 版本控制 | PKG | 24MB |
 | Node.js | JavaScript运行环境 | PKG | 71MB |
+| Homebrew | 包管理器 | PKG | 25MB |
 | Traefik | 反向代理 | TAR.GZ | 42MB |
 
 ## 🚀 快速开始

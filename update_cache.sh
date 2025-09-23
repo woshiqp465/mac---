@@ -285,10 +285,7 @@ sleep 2
 update_software "WeChat" "https://dldir1v6.qq.com/weixin/Universal/Mac/WeChatMac.dmg" "WeChat_M.dmg" 150000000
 sleep 2
 
-update_software "Warp Terminal" "https://releases.warp.dev/stable/latest/mac/Warp-macOS-arm64.dmg" "Warp_M.dmg" 60000000
-sleep 2
-
-update_software "Wave Terminal" "https://dl.waveterm.dev/releases-w2/Wave-darwin-arm64-0.11.6.dmg" "Wave_M.dmg" 60000000
+update_from_github "Wave Terminal" "wavetermdev/waveterm" "Wave-darwin-arm64.*\\.dmg$" "Wave_M.dmg" 60000000
 sleep 2
 
 update_from_github "Clash Verge" "clash-verge-rev/clash-verge-rev" "(arm64|aarch64).*\\.dmg$" "ClashVerge_M.dmg" 20000000
