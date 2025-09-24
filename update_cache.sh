@@ -342,71 +342,59 @@ update_homebrew_pkg() {
     update_software "$name" "$url" "$filename" "$min_size"
 }
 
-# Git 最新 pkg (基于 SourceForge 命名规则)
+# Git 最新 pkg (基于 SourceForge 下载列表)
 get_latest_git_pkg_url() {
-    local api="https://api.github.com/repos/git/git/tags?per_page=15"
-    local headers
-    mapfile -t headers < <(github_headers)
-
-    local api_url
-    api_url=$(with_github_mirror "$api")
-
-    local -a versions=()
-    if mapfile -t versions < <(
-        curl -sL "${headers[@]}" "$api_url" |
-            grep -oE '"name"\s*:\s*"v?([0-9]+\\.[0-9]+\\.[0-9]+)"' |
-            sed -E 's/.*"v?([0-9]+\\.[0-9]+\\.[0-9]+)".*/\1/' |
-            awk '!seen[$0]++'
-    ); then
-        :
-    else
-        versions=()
-    fi
-
-    if [[ ${#versions[@]} -eq 0 && "$api_url" != "$api" ]]; then
-        if mapfile -t versions < <(
-            curl -sL "${headers[@]}" "$api" |
-                grep -oE '"name"\s*:\s*"v?([0-9]+\\.[0-9]+\\.[0-9]+)"' |
-                sed -E 's/.*"v?([0-9]+\\.[0-9]+\\.[0-9]+)".*/\1/' |
-                awk '!seen[$0]++'
-        ); then
-            :
-        fi
-    fi
-
-    local base_url="https://downloads.sourceforge.net/project/git-osx-installer"
-    local url
-    local -a suffixes=(
-        "arm64-big-sur.dmg"
-        "universal-mavericks.dmg"
-        "intel-universal-mavericks.dmg"
-    )
-
-    for version in "${versions[@]}"; do
-        for suffix in "${suffixes[@]}"; do
-            url="$base_url/git-${version}-${suffix}"
-            if curl -fIL --connect-timeout 20 --max-time 60 -A "$USER_AGENT" "$url" >/dev/null 2>&1; then
-                printf '%s\n' "$url"
-                return 0
-            fi
-        done
-    done
-
+    local api_json="https://sourceforge.net/projects/git-osx-installer/best_release.json?platform=mac"
+    local listing_url="https://sourceforge.net/projects/git-osx-installer/files/?source=navbar"
+    local json
     local listing
-    listing=$(curl -sL -A "$USER_AGENT" "https://sourceforge.net/projects/git-osx-installer/files/?sort=date&source=navbar" || true)
-    if [[ -n "$listing" ]]; then
-        local filename
-        filename=$(printf '%s\n' "$listing" | grep -oE 'git-[0-9]+\\.[0-9]+\\.[0-9]+-[A-Za-z0-9.-]*arm64[A-Za-z0-9.-]*\\.dmg' | head -1)
-        if [[ -n "$filename" ]]; then
-            printf '%s/%s\n' "$base_url" "$filename"
-            return 0
-        fi
+    local parsed=""
 
-        filename=$(printf '%s\n' "$listing" | grep -oE 'git-[0-9]+\\.[0-9]+\\.[0-9]+-[A-Za-z0-9.-]*(universal|intel-universal)[A-Za-z0-9.-]*\\.dmg' | head -1)
-        if [[ -n "$filename" ]]; then
-            printf '%s/%s\n' "$base_url" "$filename"
+    json=$(curl -sL -A "$USER_AGENT" "$api_json" || true)
+    if [[ -n "$json" ]]; then
+        if command -v python3 >/dev/null 2>&1; then
+            parsed=$(printf '%s' "$json" | python3 - <<'PY'
+import json
+import sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+url = (data or {}).get('url')
+if isinstance(url, str) and url.startswith('http'):
+    print(url)
+    sys.exit(0)
+PY
+            ) || parsed=""
+        fi
+        if [[ -z "$parsed" ]]; then
+            parsed=$(printf '%s' "$json" | grep -oE '"url"\s*:\s*"https?://[^"\"]+' | head -1 | sed -E 's/.*"(https?:\/\/[^"\"]+)"/\1/')
+        fi
+        if [[ -n "$parsed" ]]; then
+            printf '%s\n' "$parsed"
             return 0
         fi
+    fi
+
+    listing=$(curl -sL -A "$USER_AGENT" "$listing_url" || true)
+    if [[ -n "$listing" ]] && command -v python3 >/dev/null 2>&1; then
+        parsed=$(printf '%s' "$listing" | python3 - <<'PY'
+import re
+import sys
+html = sys.stdin.read()
+pattern = re.compile(r'/projects/git-osx-installer/files/[^"]*/(git-[^"/]*(?:arm64|universal)[^"/]*\.dmg)/download', re.IGNORECASE)
+match = pattern.search(html)
+if match:
+    print(match.group(1))
+PY
+        ) || parsed=""
+    fi
+    if [[ -z "$parsed" ]]; then
+        parsed=$(printf '%s' "$listing" | grep -oE '/projects/git-osx-installer/files/[^"?]*/(git-[^"/]*(arm64|universal)[^"/]*\.dmg)/download' | head -1 | sed -E 's#.*/(git-[^/]+\.dmg)/download#\1#')
+    fi
+    if [[ -n "$parsed" ]]; then
+        printf 'https://downloads.sourceforge.net/project/git-osx-installer/%s\n' "$parsed"
+        return 0
     fi
 
     local fallback_url="https://downloads.sourceforge.net/project/git-osx-installer/latest/download?source=files"
@@ -414,7 +402,6 @@ get_latest_git_pkg_url() {
     printf '%s\n' "$fallback_url"
     return 0
 }
-
 
 update_git_pkg() {
     local name="$1"
@@ -428,8 +415,20 @@ update_git_pkg() {
         return 1
     fi
 
-    update_software "$name" "$url" "$filename" "$min_size"
+    if update_software "$name" "$url" "$filename" "$min_size"; then
+        return 0
+    fi
+
+    log_line "✗ $name 主下载失败，尝试备用镜像"
+    local fallback_url="https://mirrors.edge.kernel.org/pub/software/scm/git/mac/$(basename "$url")"
+    if update_software "$name" "$fallback_url" "$filename" "$min_size"; then
+        return 0
+    fi
+
+    log_line "✗ $name 镜像下载失败"
+    return 1
 }
+
 
 log_line "开始检查软件更新..."
 
