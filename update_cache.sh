@@ -98,6 +98,11 @@ pop_failed_update_if_matches() {
     fi
 }
 
+log_download_link() {
+    local url="$1"
+    log_line "下载链接: $url"
+}
+
 validate_pkg_archive() {
     local path="$1"
     local label="${2:-软件包}"
@@ -170,6 +175,7 @@ update_software() {
             log_line "更新 $name (大小变化: $local_size -> $remote_size)"
             cp "$target" "$target.backup.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
 
+            log_download_link "$url"
             if download_to_temp "$url" "$target.tmp"; then
                 local downloaded_size
                 downloaded_size=$(stat -c%s "$target.tmp" 2>/dev/null || echo 0)
@@ -195,6 +201,7 @@ update_software() {
     fi
 
     log_line "下载新软件 $name"
+    log_download_link "$url"
     if download_to_temp "$url" "$target"; then
         local downloaded_size
         downloaded_size=$(stat -c%s "$target" 2>/dev/null || echo 0)
