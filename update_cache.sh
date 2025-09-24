@@ -465,7 +465,6 @@ sleep 2
 update_software "WPS Office" "https://package.mac.wpscdn.cn/mac_wps_pkg/wps_installer/WPS_Office_Installer.zip" "WPS_M.zip" 5000000
 sleep 2
 
-update_git_pkg "Git" "Git_M.dmg" 50000000
 sleep 2
 
 update_homebrew_pkg "Homebrew" "Homebrew.pkg" 20000000

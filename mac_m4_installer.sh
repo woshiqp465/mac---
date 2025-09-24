@@ -269,9 +269,9 @@ install_software() {
         "ClashVerge_M.dmg"
         "VSCode_ARM64.zip"
         "WPS_M.zip"
-        "Git_M.dmg"
         "NodeJS_ARM64.pkg"
         "Homebrew.pkg"
+        "Git_M.dmg"
         "Traefik_M.tar.gz"
     )
 
@@ -281,13 +281,17 @@ install_software() {
     # 下载所有文件
     print_status "开始下载软件包..."
     for software in "${software_list[@]}"; do
+        if [[ "$software" == "Git_M.dmg" ]]; then
+            print_status "跳过下载 Git DMG，交由 Homebrew 安装"
+            continue
+        fi
         download_file "$software" || continue
     done
 
     print_status "开始安装软件..."
 
     # 安装DMG文件
-    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg Qoder_M.dmg Trae_M.dmg Git_M.dmg ClashVerge_M.dmg; do
+    for dmg in ChatGPT_M.dmg Chrome_M.dmg Docker_M.dmg Telegram_M.dmg WeChat_M.dmg Wave_M.dmg Qoder_M.dmg Trae_M.dmg ClashVerge_M.dmg; do
         if install_dmg "$dmg"; then
             ((installed_count++))
         fi
@@ -306,6 +310,19 @@ install_software() {
             ((installed_count++))
         fi
     done
+
+    # 通过 Homebrew 安装 Git
+    if command -v brew >/dev/null 2>&1; then
+        print_status "通过 Homebrew 安装 Git..."
+        if brew install git >>"$INSTALL_LOG" 2>&1 || brew upgrade git >>"$INSTALL_LOG" 2>&1; then
+            print_success "Git (Homebrew) 安装成功"
+            ((installed_count++))
+        else
+            print_warning "Git (Homebrew) 安装失败，请手动执行 brew install git"
+        fi
+    else
+        print_warning "未检测到 Homebrew，跳过 Git 安装"
+    fi
 
     # 安装TAR.GZ文件
     if install_targz "Traefik_M.tar.gz"; then

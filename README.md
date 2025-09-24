@@ -6,7 +6,7 @@
 
 ## ✨ 主要功能
 
-- 🚀 **一键安装15个常用软件**：包括开发工具、办公软件、通讯工具等
+- 🚀 **一键安装15个常用软件**：包括开发工具、办公软件、通讯工具等（Git 由 Homebrew 自动安装）
 - 🔄 **15天自动更新**：智能检测软件版本，自动下载最新版本
 - 🌐 **HTTP服务器分发**：通过内网HTTP服务器提供软件包下载
 - 🛡️ **静态IP配置**：确保服务稳定性，支持断电重启
@@ -27,7 +27,7 @@
 | Clash Verge | 代理工具 | DMG | 43MB |
 | Visual Studio Code | 代码编辑器 | ZIP | 147MB |
 | WPS Office | 办公软件 | ZIP | 6.5MB |
-| Git | 版本控制 | PKG | 24MB |
+| Git | 版本控制 | Homebrew | 自动处理 |
 | Node.js | JavaScript运行环境 | PKG | 71MB |
 | Homebrew | 包管理器 | PKG | 25MB |
 | Traefik | 反向代理 | TAR.GZ | 42MB |
