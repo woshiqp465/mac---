@@ -409,7 +409,10 @@ get_latest_git_pkg_url() {
         fi
     fi
 
-    return 1
+    local fallback_url="https://downloads.sourceforge.net/project/git-osx-installer/latest/download?source=files"
+    log_line "⚠ Git 列表解析失败，使用 latest/download"
+    printf '%s\n' "$fallback_url"
+    return 0
 }
 
 
