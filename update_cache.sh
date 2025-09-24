@@ -519,7 +519,7 @@ log_line "开始检查软件更新..."
 update_software "ChatGPT" "https://persistent.oaistatic.com/sidekick/public/ChatGPT.dmg" "ChatGPT_M.dmg" 40000000
 sleep 2
 
-update_software "Telegram" "https://osx.telegram.org/updates/Telegram.dmg" "Telegram_M.dmg" 80000000
+update_software "Telegram" "https://telegram.org/dl/macos" "Telegram_M.dmg" 80000000
 sleep 2
 
 update_software "Google Chrome" "https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg" "Chrome_M.dmg" 150000000
