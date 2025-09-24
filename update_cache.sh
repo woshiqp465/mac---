@@ -31,7 +31,19 @@ with_github_mirror() {
     local url="$1"
 
     case "$url" in
-        https://github.com/*|https://raw.githubusercontent.com/*|https://api.github.com/*|https://objects.githubusercontent.com/*)
+        https://github.com/Homebrew/brew/releases/download/*|\
+        https://github.com/Homebrew/brew/releases/latest/download/*)
+            echo "$url"
+            return 0
+            ;;
+    esac
+
+    case "$url" in
+        https://github.com/*|\
+        https://raw.githubusercontent.com/*|\
+        https://api.github.com/*|\
+        https://objects.githubusercontent.com/*|\
+        https://release-assets.githubusercontent.com/*)
             local stripped="${url#https://}"
             echo "https://mirror.ghproxy.com/${stripped}"
             ;;
@@ -77,6 +89,55 @@ download_to_temp() {
     fi
 
     _download_with_clients "$url" "$dest"
+}
+
+pop_failed_update_if_matches() {
+    local prefix="$1: "
+    if (( ${#FAILED_UPDATES[@]} > 0 )) && [[ "${FAILED_UPDATES[-1]}" == "$prefix"* ]]; then
+        unset 'FAILED_UPDATES[-1]'
+    fi
+}
+
+validate_pkg_archive() {
+    local path="$1"
+    local label="${2:-软件包}"
+
+    if [[ ! -f "$path" ]]; then
+        return 1
+    fi
+
+    if ! command -v file >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local magic
+    magic=$(file -b "$path" 2>/dev/null || true)
+
+    if [[ "$magic" == *"xar archive"* ]]; then
+        return 0
+    fi
+
+    log_line "✗ $label 安装包内容异常 (file: ${magic:-unknown})"
+    return 1
+}
+
+attempt_homebrew_download() {
+    local name="$1"
+    local url="$2"
+    local filename="$3"
+    local min_size="$4"
+    local target="$SOFTWARE_DIR/$filename"
+
+    if ! update_software "$name" "$url" "$filename" "$min_size"; then
+        return 1
+    fi
+
+    if ! validate_pkg_archive "$target" "$name"; then
+        rm -f "$target"
+        return 2
+    fi
+
+    return 0
 }
 
 # 基础更新函数，可设置文件大小阈值
@@ -331,15 +392,31 @@ update_homebrew_pkg() {
     local name="$1"
     local filename="$2"
     local min_size="${3:-20000000}"
-    local url
+    local target="$SOFTWARE_DIR/$filename"
+    local primary_url
+    local attempt_result
 
-    url=$(get_latest_homebrew_pkg_url) || true
-    if [[ -z "$url" ]]; then
+    primary_url=$(get_latest_homebrew_pkg_url) || true
+    if [[ -z "$primary_url" ]]; then
         log_line "✗ $name 未能解析最新版本"
+        FAILED_UPDATES+=("$name: 无法获取下载链接")
         return 1
     fi
 
-    update_software "$name" "$url" "$filename" "$min_size"
+    pop_failed_update_if_matches "$name"
+    attempt_homebrew_download "$name" "$primary_url" "$filename" "$min_size"
+    attempt_result=$?
+    if [[ "$attempt_result" -eq 0 ]]; then
+        return 0
+    fi
+
+    if [[ "$attempt_result" -eq 1 ]]; then
+        pop_failed_update_if_matches "$name"
+    fi
+
+    rm -f "$target"
+    FAILED_UPDATES+=("$name: 下载失败或文件损坏")
+    return 1
 }
 
 # Git 最新 pkg (基于 SourceForge 下载列表)
